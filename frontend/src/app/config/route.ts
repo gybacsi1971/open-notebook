@@ -25,10 +25,12 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   // Priority 1: Check if API_URL is explicitly set
   const envApiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL
+  const logoutRedirectUrl = process.env.LOGOUT_REDIRECT_URL || process.env.NEXT_PUBLIC_LOGOUT_REDIRECT_URL || null
 
   if (envApiUrl) {
     return NextResponse.json({
       apiUrl: envApiUrl,
+      logoutRedirectUrl,
     })
   }
 
@@ -54,6 +56,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         apiUrl,
+        logoutRedirectUrl,
       })
     }
   } catch (error) {
@@ -64,5 +67,6 @@ export async function GET(request: NextRequest) {
   console.log('[runtime-config] Using fallback: http://localhost:5055')
   return NextResponse.json({
     apiUrl: 'http://localhost:5055',
+    logoutRedirectUrl,
   })
 }

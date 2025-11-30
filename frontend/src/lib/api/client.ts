@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios'
-import { getApiUrl } from '@/lib/config'
+import { getApiUrl, getLogoutRedirectUrl } from '@/lib/config'
 
 // API client with runtime-configurable base URL
 // The base URL is fetched from the API config endpoint on first request
@@ -51,12 +51,21 @@ apiClient.interceptors.request.use(async (config) => {
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
-      // Clear auth and redirect to login
+      // Clear auth and redirect to configured logout target
       if (typeof window !== 'undefined') {
         localStorage.removeItem('auth-storage')
-        window.location.href = '/login'
+        try {
+          const target = await getLogoutRedirectUrl()
+          if (target.startsWith('http')) {
+            window.location.assign(target)
+          } else {
+            window.location.href = target
+          }
+        } catch {
+          window.location.href = '/login'
+        }
       }
     }
     return Promise.reject(error)

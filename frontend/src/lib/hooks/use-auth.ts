@@ -1,9 +1,10 @@
 'use client'
 
-import { useAuthStore } from '@/lib/stores/auth-store'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
+import { getLogoutRedirectUrl } from '@/lib/config'
+import { useAuthStore } from '@/lib/stores/auth-store'
 export function useAuth() {
   const router = useRouter()
   const {
@@ -53,9 +54,14 @@ export function useAuth() {
     return success
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     logout()
-    router.push('/login')
+    const target = await getLogoutRedirectUrl()
+    if (target.startsWith('http')) {
+      window.location.assign(target)
+    } else {
+      router.push(target)
+    }
   }
 
   return {

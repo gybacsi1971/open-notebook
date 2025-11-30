@@ -64,6 +64,7 @@ async function fetchConfig(): Promise<AppConfig> {
   // This allows API_URL to be set at runtime (not baked into build)
   // Note: Endpoint is at /config (not /api/config) to avoid reverse proxy conflicts
   let runtimeApiUrl: string | null = null
+  let runtimeLogoutRedirectUrl: string | null = null
   try {
     console.log('🔧 [Config] Attempting to fetch runtime config from /config endpoint...')
     const runtimeResponse = await fetch('/config', {
@@ -72,6 +73,7 @@ async function fetchConfig(): Promise<AppConfig> {
     if (runtimeResponse.ok) {
       const runtimeData = await runtimeResponse.json()
       runtimeApiUrl = runtimeData.apiUrl
+      runtimeLogoutRedirectUrl = runtimeData.logoutRedirectUrl || null
       console.log('✅ [Config] Runtime API URL from server:', runtimeApiUrl)
     } else {
       console.log('⚠️ [Config] Runtime config endpoint returned status:', runtimeResponse.status)
@@ -82,6 +84,7 @@ async function fetchConfig(): Promise<AppConfig> {
 
   // STEP 2: Fallback to build-time environment variable
   const envApiUrl = process.env.NEXT_PUBLIC_API_URL
+  const envLogoutRedirectUrl = process.env.NEXT_PUBLIC_LOGOUT_REDIRECT_URL
   console.log('🔧 [Config] NEXT_PUBLIC_API_URL from build:', envApiUrl || '(not set)')
 
   // STEP 3: Smart default - infer API URL from current frontend URL
@@ -125,6 +128,7 @@ async function fetchConfig(): Promise<AppConfig> {
         latestVersion: data.latestVersion || null,
         hasUpdate: data.hasUpdate || false,
         dbStatus: data.dbStatus, // Can be undefined for old backends
+        logoutRedirectUrl: runtimeLogoutRedirectUrl || envLogoutRedirectUrl || data.logoutRedirectUrl || null,
       }
       console.log('✅ [Config] Successfully loaded API config:', config)
       return config
@@ -144,4 +148,13 @@ async function fetchConfig(): Promise<AppConfig> {
 export function resetConfig(): void {
   config = null
   configPromise = null
+}
+
+/**
+ * Resolve the logout redirect target with sensible fallbacks.
+ */
+export async function getLogoutRedirectUrl(): Promise<string> {
+  const cfg = await getConfig()
+  const envFallback = process.env.NEXT_PUBLIC_LOGOUT_REDIRECT_URL
+  return cfg.logoutRedirectUrl || envFallback || '/login'
 }
