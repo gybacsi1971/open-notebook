@@ -136,3 +136,4 @@ specs/
 .playwright-mcp/
 
 docker-compose.yaml
+frontend/pnpm-lock.yaml
